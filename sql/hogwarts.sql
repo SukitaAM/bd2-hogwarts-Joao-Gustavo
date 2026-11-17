@@ -1,4 +1,3 @@
-
 -- =====================================================================
 -- Atividade Prática: Escola de Magia de Hogwarts
 -- Disciplina: Manipulação de Dados / Banco de Dados II (ADS242N01)
@@ -11,16 +10,16 @@
 -- Comandos que a atividade pede para FALHAR devem ficar comentados,
 -- seguidos do código/mensagem de erro e da sua explicação.
 -- =====================================================================
- 
+
 SET SQL_SAFE_UPDATES = 0;
- 
+
 -- =====================================================================
 -- 1. PREPARAÇÃO DO AMBIENTE (DDL)
 -- =====================================================================
 DROP DATABASE IF EXISTS hogwarts;
 CREATE DATABASE hogwarts;
 USE hogwarts;
- 
+
 -- Tabela casa
 CREATE TABLE casa (
     id_casa   INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,7 +27,7 @@ CREATE TABLE casa (
     fundador  VARCHAR(60),
     pontos    INT DEFAULT 0
 );
- 
+
 -- Tabela professor
 CREATE TABLE professor (
     id_prof          INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,7 +37,7 @@ CREATE TABLE professor (
     id_casa          INT,
     FOREIGN KEY (id_casa) REFERENCES casa (id_casa)
 );
- 
+
 -- Tabela disciplina
 CREATE TABLE disciplina (
     id_disc    INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,7 +46,7 @@ CREATE TABLE disciplina (
     id_prof    INT,
     FOREIGN KEY (id_prof) REFERENCES professor (id_prof)
 );
- 
+
 -- Tabela aluno
 CREATE TABLE aluno (
     id_aluno      INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,7 +56,7 @@ CREATE TABLE aluno (
     saldo_galeoes DECIMAL(10,2) DEFAULT 0 CHECK (saldo_galeoes >= 0),
     FOREIGN KEY (id_casa) REFERENCES casa (id_casa)
 );
- 
+
 -- Tabela matricula
 CREATE TABLE matricula (
     id_aluno INT,
@@ -67,7 +66,7 @@ CREATE TABLE matricula (
     FOREIGN KEY (id_aluno) REFERENCES aluno (id_aluno),
     FOREIGN KEY (id_disc)  REFERENCES disciplina (id_disc)
 );
- 
+
 -- Tabela registro_pontos
 CREATE TABLE registro_pontos (
     id_registro   INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,7 +78,7 @@ CREATE TABLE registro_pontos (
     FOREIGN KEY (id_aluno) REFERENCES aluno (id_aluno),
     FOREIGN KEY (id_prof)  REFERENCES professor (id_prof)
 );
- 
+
 -- Tabela produto
 CREATE TABLE produto (
     id_produto   INT AUTO_INCREMENT PRIMARY KEY,
@@ -88,7 +87,7 @@ CREATE TABLE produto (
     preco        DECIMAL(10,2) CHECK (preco > 0),
     estoque      INT DEFAULT 0 CHECK (estoque >= 0)
 );
- 
+
 -- Tabela compra
 CREATE TABLE compra (
     id_compra   INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,7 +99,7 @@ CREATE TABLE compra (
     FOREIGN KEY (id_aluno)   REFERENCES aluno (id_aluno),
     FOREIGN KEY (id_produto) REFERENCES produto (id_produto)
 );
- 
+
 -- Tabela log_auditoria
 CREATE TABLE log_auditoria (
     id_log    INT AUTO_INCREMENT PRIMARY KEY,
@@ -109,7 +108,7 @@ CREATE TABLE log_auditoria (
     descricao VARCHAR(255),
     data_hora DATETIME DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- Pergunta para pensar: por que matricula usa chave primária composta?
 -- Resposta: porque o par (id_aluno, id_disc) já identifica a matrícula de
 -- forma única e natural: um aluno só se matricula uma vez em cada
@@ -118,8 +117,8 @@ CREATE TABLE log_auditoria (
 -- situações para a mesma matrícula). Seria preciso criar ainda uma
 -- restrição UNIQUE (id_aluno, id_disc) para proteger a regra, e o id
 -- extra seria uma coluna e um índice a mais sem utilidade.
- 
- 
+
+
 -- =====================================================================
 -- 1.1 CARGA INICIAL DE DADOS (DML)
 -- =====================================================================
@@ -129,7 +128,7 @@ INSERT INTO casa (nome_casa, fundador) VALUES
 ('Sonserina',  'Salazar Slytherin'),  -- 2
 ('Corvinal',   'Rowena Ravenclaw'),   -- 3
 ('Lufa-Lufa',  'Helga Hufflepuff');   -- 4
- 
+
 -- INSERT professor
 INSERT INTO professor (nome, salario, data_contratacao, id_casa) VALUES
 ('Minerva McGonagall', 9500.00, '1956-12-01', 1),    -- 1
@@ -141,7 +140,7 @@ INSERT INTO professor (nome, salario, data_contratacao, id_casa) VALUES
 ('Sibila Trelawney',   5100.00, '1980-09-01', NULL), -- 7
 ('Gilderoy Lockhart',  7000.00, '1992-09-01', NULL), -- 8
 ('Horácio Slughorn',   8000.00, '1996-09-01', NULL); -- 9
- 
+
 -- INSERT disciplina
 INSERT INTO disciplina (nome_disc, ano_minimo, id_prof) VALUES
 ('Transfiguração', 1, 1),                      -- 1
@@ -153,7 +152,7 @@ INSERT INTO disciplina (nome_disc, ano_minimo, id_prof) VALUES
 ('Adivinhação', 3, 7),                         -- 7
 ('Estudo dos Trouxas', 3, NULL),               -- 8
 ('Runas Antigas', 3, NULL);                    -- 9
- 
+
 -- INSERT aluno
 INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes) VALUES
 ('Harry Potter',       5, 1,    120.00), -- 1
@@ -170,7 +169,7 @@ INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes) VALUES
 ('Ana Abbott',         5, 4,     25.00), -- 12
 ('Ernesto Macmillan',  5, 4,     70.00), -- 13
 ('Teddy Lupin',        1, NULL,   0.00); -- 14 (ainda não passou pelo Chapéu Seletor)
- 
+
 -- INSERT matricula
 INSERT INTO matricula (id_aluno, id_disc, nota) VALUES
 (1,1,7.5),(1,2,5.0),(1,6,9.8),(1,5,8.0),
@@ -186,7 +185,7 @@ INSERT INTO matricula (id_aluno, id_disc, nota) VALUES
 (11,4,8.5),(11,6,9.0),(11,1,8.0),
 (12,4,8.0),
 (13,4,7.0),(13,3,7.5);
- 
+
 -- INSERT produto
 INSERT INTO produto (nome_produto, loja, preco, estoque) VALUES
 ('Varinha de Azevinho',              'Olivaras',             7.00,  10), -- 1
@@ -197,7 +196,7 @@ INSERT INTO produto (nome_produto, loja, preco, estoque) VALUES
 ('Caldeirão de Estanho',             'Caldeirões Potage',    9.00,   0), -- 6
 ('Kit de Logros',                    'Gemialidades Weasley',25.00,  40), -- 7
 ('Pena de Repetição Rápida',         'Escribbulus',         15.00,   5); -- 8
- 
+
 -- Confira: SELECT COUNT(*) de cada tabela
 SELECT 'casa' AS tabela, COUNT(*) AS total FROM casa
 UNION ALL SELECT 'professor',  COUNT(*) FROM professor
@@ -206,33 +205,33 @@ UNION ALL SELECT 'aluno',      COUNT(*) FROM aluno
 UNION ALL SELECT 'matricula',  COUNT(*) FROM matricula
 UNION ALL SELECT 'produto',    COUNT(*) FROM produto;
 -- Esperado: 4, 9, 9, 14, 35, 8
- 
- 
+
+
 -- =====================================================================
 -- 2. MANUTENÇÃO PÓS-CARGA (ALTER E UPDATE)
 -- =====================================================================
 -- Questão 1
 ALTER TABLE aluno ADD COLUMN email VARCHAR(100);
- 
+
 -- Questão 2
 ALTER TABLE matricula ADD COLUMN situacao VARCHAR(20) DEFAULT 'Cursando';
- 
+
 -- Questão 3
 ALTER TABLE produto ADD COLUMN ativo CHAR(1) DEFAULT 'S';
- 
+
 -- Questão 4
 ALTER TABLE casa MODIFY COLUMN fundador VARCHAR(100);
- 
+
 -- Questão 5
 ALTER TABLE professor RENAME COLUMN data_contratacao TO data_admissao;
- 
+
 -- Questão 6
 UPDATE aluno
 SET email = CONCAT(LOWER(REPLACE(nome, ' ', '.')), '@hogwarts.edu');
- 
+
 -- Questão 7
 ALTER TABLE aluno ADD CONSTRAINT uq_aluno_email UNIQUE (email);
- 
+
 -- Questão 8
 UPDATE matricula
 SET nota = LEAST(nota + 0.5, 10)
@@ -241,20 +240,80 @@ WHERE id_disc IN (
     FROM disciplina
     WHERE id_prof IN (SELECT id_prof FROM professor WHERE nome = 'Remo Lupin')
 );
- 
+
 -- Questão 9
 UPDATE matricula
 SET situacao = CASE WHEN nota >= 6 THEN 'Aprovado' ELSE 'Reprovado' END;
- 
+
 -- Questão 10
 UPDATE professor
 SET salario = salario * 1.10
 WHERE id_casa IS NOT NULL
   AND data_admissao < '1980-01-01';
- 
+
 -- Questão 11
 UPDATE produto SET ativo = 'N' WHERE estoque = 0;
- 
+
 -- Questão 12
 UPDATE produto SET preco = preco * 0.80 WHERE loja = 'Dedosdemel';
- 
+
+
+-- =====================================================================
+-- 3. REMOÇÃO DE DADOS (DELETE) E TESTES DE RESTRIÇÕES
+-- =====================================================================
+-- Questão 13
+-- DELETE FROM casa WHERE nome_casa = 'Sonserina';
+-- Erro: Error Code 1451 - Cannot delete or update a parent row: a foreign
+--       key constraint fails (`hogwarts`.`aluno`, CONSTRAINT `aluno_ibfk_1`
+--       FOREIGN KEY (`id_casa`) REFERENCES `casa` (`id_casa`))
+-- Explicação: a Sonserina é referenciada por alunos (e por um professor,
+-- o diretor da casa). A chave estrangeira impede apagar o registro "pai"
+-- enquanto existirem registros "filhos" apontando para ele, o que
+-- evitaria alunos órfãos.
+
+-- Questão 14
+-- INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes)
+-- VALUES ('Dobby', 8, 1, 0);
+-- Erro: Error Code 3819 - Check constraint 'aluno_chk_1' is violated.
+-- Explicação: a restrição CHECK só aceita ano_escolar entre 1 e 7; o 8º
+-- ano está fora da faixa, então o banco recusa a linha inteira.
+
+-- Questão 15
+-- INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes, email)
+-- VALUES ('Harry Potter (Polissuco)', 5, 1, 0, 'harry.potter@hogwarts.edu');
+-- Erro: Error Code 1062 - Duplicate entry 'harry.potter@hogwarts.edu' for
+--       key 'aluno.uq_aluno_email'
+-- Explicação: o e-mail já pertence ao Harry verdadeiro e a restrição
+-- UNIQUE uq_aluno_email não permite dois alunos com o mesmo e-mail.
+
+-- Questão 16
+-- DELETE FROM professor WHERE nome = 'Severo Snape';
+-- Erro: Error Code 1451 - Cannot delete or update a parent row: a foreign
+--       key constraint fails (`hogwarts`.`disciplina`, CONSTRAINT
+--       `disciplina_ibfk_1` FOREIGN KEY (`id_prof`) REFERENCES `professor`
+--       (`id_prof`))
+-- Explicação: Snape é o professor responsável por Poções (disciplina.id_prof
+-- aponta para ele). Enquanto a disciplina referenciar o professor, a chave
+-- estrangeira impede a exclusão.
+
+-- Questão 17
+DELETE FROM professor WHERE nome = 'Gilderoy Lockhart';
+-- Funciona porque nenhuma outra tabela referencia Lockhart: ele não
+-- ministra disciplina, não dirige casa e não concedeu pontos (não há
+-- linhas filhas). Snape, ao contrário, é referenciado por disciplina.
+
+-- Questão 18
+DELETE FROM matricula
+WHERE id_aluno IN (SELECT id_aluno FROM aluno WHERE nome = 'Vicente Crabbe');
+
+DELETE FROM aluno WHERE nome = 'Vicente Crabbe';
+
+-- Questão 19
+DELETE FROM disciplina
+WHERE id_disc NOT IN (SELECT id_disc FROM matricula);
+
+-- Confira: 8 professores, 13 alunos, 8 disciplinas, 33 matrículas
+SELECT (SELECT COUNT(*) FROM professor)  AS professores,
+       (SELECT COUNT(*) FROM aluno)      AS alunos,
+       (SELECT COUNT(*) FROM disciplina) AS disciplinas,
+       (SELECT COUNT(*) FROM matricula)  AS matriculas;
