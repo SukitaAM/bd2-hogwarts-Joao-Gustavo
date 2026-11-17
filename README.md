@@ -9,7 +9,7 @@
 
 | Nome | Matrícula | Usuário do GitHub |
 | --- | --- | --- |
-|  |  |  |
+| João Gustavo Gonçalves Vasconcelos | 2408298 | SukitaAM |
 
 ## O cenário
 
