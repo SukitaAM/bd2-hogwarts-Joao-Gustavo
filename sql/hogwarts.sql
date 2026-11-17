@@ -317,3 +317,155 @@ SELECT (SELECT COUNT(*) FROM professor)  AS professores,
        (SELECT COUNT(*) FROM aluno)      AS alunos,
        (SELECT COUNT(*) FROM disciplina) AS disciplinas,
        (SELECT COUNT(*) FROM matricula)  AS matriculas;
+
+
+-- =====================================================================
+-- 4. TRIGGERS
+-- =====================================================================
+DELIMITER $$
+
+-- Questão 20 - trg_pontos_casa
+CREATE TRIGGER trg_pontos_casa
+AFTER INSERT ON registro_pontos
+FOR EACH ROW
+BEGIN
+    UPDATE casa
+    SET pontos = pontos + NEW.pontos
+    WHERE id_casa = (SELECT id_casa FROM aluno WHERE id_aluno = NEW.id_aluno);
+END$$
+
+-- Questão 21 - trg_valida_compra
+CREATE TRIGGER trg_valida_compra
+BEFORE INSERT ON compra
+FOR EACH ROW
+BEGIN
+    DECLARE v_preco   DECIMAL(10,2);
+    DECLARE v_estoque INT;
+    DECLARE v_saldo   DECIMAL(10,2);
+
+    SELECT preco, estoque INTO v_preco, v_estoque
+    FROM produto WHERE id_produto = NEW.id_produto;
+
+    SELECT saldo_galeoes INTO v_saldo
+    FROM aluno WHERE id_aluno = NEW.id_aluno;
+
+    IF v_estoque < NEW.quantidade THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Estoque insuficiente no Beco Diagonal';
+    ELSEIF v_saldo < v_preco * NEW.quantidade THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Galeões insuficientes no cofre do aluno';
+    ELSE
+        SET NEW.valor_total = v_preco * NEW.quantidade;
+    END IF;
+END$$
+
+-- Questão 22 - trg_baixa_compra
+CREATE TRIGGER trg_baixa_compra
+AFTER INSERT ON compra
+FOR EACH ROW
+BEGIN
+    UPDATE produto
+    SET estoque = estoque - NEW.quantidade
+    WHERE id_produto = NEW.id_produto;
+
+    UPDATE aluno
+    SET saldo_galeoes = saldo_galeoes - NEW.valor_total
+    WHERE id_aluno = NEW.id_aluno;
+END$$
+
+-- Questão 23 - trg_situacao_nota
+CREATE TRIGGER trg_situacao_nota
+BEFORE UPDATE ON matricula
+FOR EACH ROW
+BEGIN
+    IF NOT (NEW.nota <=> OLD.nota) THEN
+        SET NEW.situacao = IF(NEW.nota >= 6, 'Aprovado', 'Reprovado');
+    END IF;
+END$$
+
+-- Questão 24 - trg_audita_salario
+CREATE TRIGGER trg_audita_salario
+AFTER UPDATE ON professor
+FOR EACH ROW
+BEGIN
+    IF OLD.salario <> NEW.salario THEN
+        INSERT INTO log_auditoria (tabela, operacao, descricao)
+        VALUES ('professor', 'UPDATE',
+                CONCAT(NEW.nome, ': salário de ', OLD.salario,
+                       ' para ', NEW.salario));
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Pergunta para pensar: por que a validação é BEFORE e a baixa é AFTER?
+-- Resposta: a validação precisa acontecer ANTES da gravação para poder
+-- barrar a compra (SIGNAL) e para preencher NEW.valor_total, o que só é
+-- possível em um trigger BEFORE. A baixa de estoque e de saldo só deve
+-- ocorrer DEPOIS de a compra ter sido gravada com sucesso; assim nunca se
+-- desconta estoque ou galeões de uma compra que foi recusada.
+
+-- Questão 25 - INSERT registro_pontos
+INSERT INTO registro_pontos (id_aluno, id_prof, pontos, motivo, data_registro) VALUES
+( 2, 3,  20, 'Feitiço de levitação perfeito',          '2026-09-10'),
+( 1, 2, -10, 'Atraso na aula de Poções',               '2026-09-12'),
+( 5, 2,  15, 'Poção do Morto-Vivo impecável',          '2026-09-12'),
+( 8, 5,  10, 'Cuidou de um testrálio ferido',          '2026-09-20'),
+(11, 4,  25, 'Ajudou os alunos do 1º ano',             '2026-09-25'),
+( 4, 4,  30, 'Identificou uma Mimbulus mimbletonia',   '2026-10-02'),
+( 6, 1, -20, 'Fora da cama após o toque de recolher',  '2026-10-05'),
+( 1, 6,  50, 'Conjurou um Patrono corpóreo',           '2026-10-15'),
+( 9, 3,  15, 'Duelo exemplar no Clube de Duelos',      '2026-10-18'),
+( 5, 1, -30, 'Duelo proibido no corredor',             '2026-10-31'),
+(10, 7,   5, 'Interpretação da bola de cristal',       '2026-11-03'),
+(13, 4,  10, 'Colheita de mandrágoras',                '2026-11-05'),
+( 3, 9,  10, 'Identificou um bezoar',                  '2026-11-06'),
+( 8, 3,  20, 'Resposta brilhante sobre o Diadema',     '2026-11-08'),
+( 6, 2,  25, 'Antídoto para venenos comuns',           '2026-11-09'),
+( 5, 9,  40, 'Melhor poção do Clube do Slugue',        '2026-11-09');
+
+-- Questão 25 - INSERT compra
+INSERT INTO compra (id_aluno, id_produto, quantidade, data_compra) VALUES
+( 5, 2,  1, '2026-09-01'),
+( 2, 5,  2, '2026-09-02'),
+( 1, 3, 10, '2026-09-03'),
+( 3, 4,  5, '2026-09-03'),
+( 9, 8,  1, '2026-09-15'),
+( 8, 5,  1, '2026-09-20'),
+(11, 1,  1, '2026-10-01'),
+( 6, 3, 20, '2026-10-10'),
+( 1, 7,  2, '2026-10-20'),
+(13, 4, 10, '2026-11-02');
+
+-- Questão 25 - Rony tenta comprar a Nimbus
+-- INSERT INTO compra (id_aluno, id_produto, quantidade, data_compra)
+-- VALUES (3, 2, 1, CURDATE());
+-- Resultado: Error Code 1644 - Galeões insuficientes no cofre do aluno
+-- (o Rony tem apenas 6.00 galeões e a Nimbus custa 300.00; o estoque é
+-- suficiente, por isso a validação cai na checagem de saldo).
+
+-- Questão 25 - Hermione tenta comprar o caldeirão
+-- INSERT INTO compra (id_aluno, id_produto, quantidade, data_compra)
+-- VALUES (2, 6, 1, CURDATE());
+-- Resultado: Error Code 1644 - Estoque insuficiente no Beco Diagonal
+-- (o Caldeirão de Estanho tem estoque 0; a checagem de estoque vem
+-- primeiro, mesmo a Hermione tendo saldo de sobra).
+
+-- Questão 25 - Recuperação do Rony em Poções
+UPDATE matricula SET nota = 6.5 WHERE id_aluno = 3 AND id_disc = 2;
+SELECT m.id_aluno, m.id_disc, m.nota, m.situacao
+FROM matricula m WHERE m.id_aluno = 3 AND m.id_disc = 2;
+-- Resultado: situacao passou de 'Reprovado' para 'Aprovado' sem que a
+-- coluna fosse mencionada no UPDATE: o trigger trg_situacao_nota a recalculou.
+
+-- Questão 25 - Salário e data de admissão do Hagrid
+UPDATE professor SET salario = 5000.00 WHERE nome = 'Rúbeo Hagrid';
+UPDATE professor SET data_admissao = '1993-08-15' WHERE nome = 'Rúbeo Hagrid';
+SELECT * FROM log_auditoria;
+-- Linhas em log_auditoria: 1 (apenas a mudança de salário; o segundo
+-- UPDATE altera só a data_admissao, então OLD.salario = NEW.salario e o
+-- trigger não grava nada).
+-- Por que o reajuste da questão 10 não aparece: porque ele foi executado
+-- na seção 2, antes de o trigger trg_audita_salario existir (seção 4).
+-- Trigger só age sobre comandos executados depois de criado.
